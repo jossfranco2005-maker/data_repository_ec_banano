@@ -88,7 +88,7 @@ Cada notebook en `experimentos_comparacion/` es autocontenido. Ejecutar en orden
 
 | Fuente | Organismo | Período | Formato |
 |--------|-----------|---------|---------|
-| ESPAC | INEC Ecuador | 2010–2023 | xlsx / csv |
+| ESPAC | INEC Ecuador | 2010–2025 | xlsx / csv |
 | SIPA | MAG Ecuador | 2015–2023 | xlsx |
 | FAOSTAT | FAO | 1990–2022 | csv |
 | AEBE | AEBE | 2010–2023 | pdf |
