@@ -49,16 +49,8 @@ data_repository_ec_agro/
 │
 ├── resultados/                   # Outputs del experimento (no código)
 │   ├── metricas/                 # Tablas metricas_* en xlsx/csv
-│   ├── graficos/                 # Comparativas para el artículo INGENIUS
-│   └── tableau/                  # Modelo star schema + observabilidad
-│
-├── documentacion/
-│   ├── prompt_job_etl_banano.md  # Configuración del Job de Databricks
-│   ├── arquitectura_llmops.md    # Diagramas LLMOps / Medallion
-│   └── articulo_ingenius/        # Borradores y versión final del paper
-│
-└── docs/
-    └── diagrama_job.png          # Captura del DAG en Databricks
+│   └── graficos/                 # Comparativas para el artículo INGENIUS
+
 ```
 
 ---
@@ -96,7 +88,7 @@ Cada notebook en `experimentos_comparacion/` es autocontenido. Ejecutar en orden
 
 | Fuente | Organismo | Período | Formato |
 |--------|-----------|---------|---------|
-| ESPAC | INEC Ecuador | 2010–2023 | xlsx / pdf |
+| ESPAC | INEC Ecuador | 2010–2023 | xlsx / csv |
 | SIPA | MAG Ecuador | 2015–2023 | xlsx |
 | FAOSTAT | FAO | 1990–2022 | csv |
-| AEBE | AEBE | 2010–2023 | xlsx |
+| AEBE | AEBE | 2010–2023 | pdf |
