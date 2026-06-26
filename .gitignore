@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# VS Code settings
+.vscode/
+
+# MacOS files
+.DS_Store
+
+# Credentials / Secrets
+secrets.json
+credentials.json
+*.pem
+*.key
+*.p12
+*.json_private_key
