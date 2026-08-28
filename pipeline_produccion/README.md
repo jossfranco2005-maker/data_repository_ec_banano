@@ -1,113 +1,64 @@
 # Pipeline de Producción — ETL Banano Ecuador
 
-Contiene los **3 notebooks de producción** que forman el DAG del Databricks Job.  
-Son la versión limpia y desacoplada del pipeline, seleccionada para producción tras el estudio comparativo de arquitecturas, y lista para ejecutarse de forma autónoma y recurrente.
+Contiene los **3 notebooks de producción** que forman el DAG del Databricks Job productivo.  
+Son la versión limpia, modular y desacoplada del pipeline, seleccionada para producción tras el estudio comparativo de arquitecturas, y lista para ejecutarse de forma autónoma y recurrente.
 
 ---
 
-## Arquitectura seleccionada
+## 🏆 Arquitectura Seleccionada
 
-El pipeline productivo está implementado como **Agente Custom** (Python puro, sin frameworks de orquestación externos), elegido por ser la única arquitectura que mantuvo cobertura completa de las 12 fuentes en los tres escenarios del estudio comparativo con variación de tiempo inferior al 1,4 % entre condiciones nominal y perturbada.
+El pipeline productivo está implementado como **Agente Custom (Híbrido Python-LangChain)**, elegido por ser la arquitectura con mejor estabilidad, menor sobrecosto de orquestación y cobertura total en las 12 fuentes públicas del sector bananero ecuatoriano, manteniendo una variación de tiempo inferior al 1.4% entre condiciones nominal y perturbada.
 
 ---
 
-## DAG del Job
+## ⚙️ DAG del Job en Databricks
 
 ```
-tarea_extraccion
+tarea_extraccion (1_Extraccion.ipynb)
       │
-      ▼  (si hay_nuevos == "true")
-tarea_transformacion
+      ▼  (condición: hay_nuevos == "true")
+tarea_transformacion (2_Transformacion.ipynb)
       │
-      ▼  (si status == "success")
-tarea_carga
+      ▼  (condición: status == "success")
+tarea_carga (3_Carga.ipynb)
 ```
 
-La condición entre tareas se pasa mediante **Task Values** de Databricks:
+La comunicación entre tareas del Job se gestiona mediante **Task Values** de Databricks:
 
-| Task Value | Producido por | Consumido por |
-|------------|---------------|---------------|
-| `hay_nuevos` | `1_Extraccion` | `2_Transformacion` |
-| `total_archivos` | `1_Extraccion` | (log / referencia) |
-| `status` | `2_Transformacion` | `3_Carga` |
-
-> El Job se programa con una expresión cron semanal (cada lunes a las 10:00, zona horaria `America/Guayaquil`). Si no hay archivos nuevos en ninguna fuente, el pipeline se detiene tras la Tarea 1 sin reportar error, evitando consumo de cómputo innecesario.
+| Task Value | Producido por | Consumido por | Propósito |
+|:---|:---|:---|:---|
+| `hay_nuevos` | `1_Extraccion` | `2_Transformacion` | Flag booleano de detección de archivos nuevos |
+| `total_archivos` | `1_Extraccion` | `2_Transformacion` | Conteo de archivos descargados por hash MD5 |
+| `status` | `2_Transformacion` | `3_Carga` | Confirmación de escritura exitosa en Unity Catalog |
 
 ---
 
-## Notebooks
+## 📂 Notebooks de Producción
 
-### 📥 `1_Extraccion.ipynb`
+### 📥 1. `1_Extraccion.ipynb`
+- Descarga automatizada de fuentes públicas (**ESPAC**, **SIPA**, **FAOSTAT**, **AEBE**).
+- Verificación de integridad mediante hashes MD5 y tabla `control_descargas_fuentes`.
+- Orquestado con **Llama 4 Maverick** (`databricks-llama-4-maverick`).
 
-**Tarea del Job:** `tarea_extraccion`
+### 🔧 2. `2_Transformacion.ipynb`
+- Mapeo híbrido de esquemas (reglas directas para AEBE/ESPAC conocidos + resolución LLM para dinámicos).
+- Limpieza, normalización y funciones especializadas por fuente (`transformar_espac_t13_t26_mejorado_v3`, `transformar_sipa_temperatura`, `transformar_faostat`, etc.).
+- Imputación KNN Inteligente supervisada con LLM y umbral del 60% para FAOSTAT.
+- Limpieza de estado de error (`error_lectura: None`) al procesar PDFs de AEBE de forma exitosa.
+- Carga a tablas Delta Lake en Unity Catalog Gold (`bd_banano_ec`).
 
-Descarga los archivos de las 4 fuentes públicas del sector bananero ecuatoriano usando un agente personalizado en Python puro con **Llama 4 Maverick** como LLM de decisión.
-
-- **Fuentes:** ESPAC · SIPA · FAOSTAT · AEBE
-- **Control de duplicados:** hash MD5 por archivo — solo descarga si el archivo cambió respecto a la ejecución anterior
-- **Salidas:**
-  - Archivos crudos en `/Volumes/workspace/default/raw_*`
-  - Tabla `bd_banano_ec.control_descargas_fuentes`
-- **Task Values exportados:** `hay_nuevos`, `total_archivos`
-
----
-
-### ⚙️ `2_Transformacion.ipynb`
-
-**Tarea del Job:** `tarea_transformacion`  
-**Condición de ejecución:** `hay_nuevos == "true"`
-
-Lee los archivos crudos, aplica transformaciones especializadas por fuente y carga los datos limpios en las tablas Delta de `bd_banano_ec`.
-
-- **Tablas dimensionales:** `dim_regiones`, `dim_provincias`
-- **Tablas de datos:**
-  - `espac_banano_platano_provincia`
-  - `espac_uso_del_suelo`
-  - `sipa_temperatura_precipitacion`
-  - `faostat_produccion_banano_platano`
-- **LLM usado para:** mapeo archivo → tabla destino, decisión KNN de imputación
-- **Task Values exportados:** `status`
+### ☁️ 3. `3_Carga.ipynb`
+- Deduplicación inteligente de registros de datos y métricas (`obtener_dataframe_deduplicado()`) antes de exportar a Excel/Pandas para evitar repetir filas entre años viejos y nuevos.
+- Carga e integración con Google Drive API (`actualizar_archivo_drive()`) con auto-limpieza de archivos duplicados sobrantes en la carpeta destino.
 
 ---
 
-### 💾 `3_Carga.ipynb`
+## 📊 Marco de Métricas Aplicado ($M_1$–$M_5$)
 
-**Tarea del Job:** `tarea_carga`  
-**Condición de ejecución:** `status == "success"`
-
-Lee las 5 tablas Delta limpias y las exporta a **Google Drive** como archivos `.xlsx` usando una cuenta de servicio, para su consumo posterior en Tableau Public.
-
-- **Autenticación:** Google Service Account (JSON en variable `SERVICE_ACCOUNT_INFO`)
-- **Destino:** carpeta de Drive configurada en `FOLDER_OUTPUT_ID`
-- **No exporta Task Values** (es la última tarea del DAG)
-
----
-
-## Librerías requeridas
-
-```bash
-# 1_Extraccion
-%pip install langchain langchain-databricks beautifulsoup4 openpyxl xlrd
-
-# 2_Transformacion
-%pip install langchain langchain-databricks openpyxl xlrd numpy scikit-learn pdfplumber
-
-# 3_Carga
-%pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib openpyxl
-```
-
-> ⚠️ Cada notebook instala sus dependencias en la celda 1 (Bloque 1). Ejecutar **solo esa celda primero** y esperar el reinicio del kernel antes de continuar.
-
----
-
-## Configuración mínima antes de ejecutar
-
-> ⚠️ **Completa estos valores antes de ejecutar cualquier celda.** Los notebooks contienen marcadores `# SECRETO` y `# CONFIGURAR` en las primeras celdas. Si los ejecutas sin rellenarlos, fallarán o escribirán en rutas incorrectas de otro workspace.
-
-| Variable | Notebook | Descripción |
-|----------|----------|-------------|
-| `SERVICE_ACCOUNT_INFO` | `3_Carga` | JSON completo de tu cuenta de servicio de Google (obtenido desde Google Cloud Console) |
-| `FOLDER_OUTPUT_ID` | `3_Carga` | ID de la carpeta destino en tu Google Drive |
-| `DB_NAME` | todos | Nombre de tu base de datos Delta en Unity Catalog |
-| Rutas `/Volumes/` | `1_Extraccion`, `2_Transformacion` | Ajusta al esquema de volumen de tu workspace de Databricks |
-
+| ID | Métrica | Unidad | Evaluación |
+|:---:|:---|:---:|:---|
+| **M1** | **Tiempo de ejecución** | Segundos ($s$) | Promedio por combinación de arquitectura y escenario |
+| **M2** | **Calidad del dato** | Porcentaje ($\%$) | Evaluando Completitud, Validez y Unicidad: $M_2 = \frac{\text{reg. válidos}}{\text{total filas}} \times 100$ |
+| **M3** | **Llamadas al LLM** | Llamadas / archivo | Invocaciones normalizadas: $M_3 = \frac{\sum \text{llamadas}}{n_{\text{archivos}}}$ |
+| **M4** | **Resiliencia semántica** | Porcentaje ($0$–$100\%$) | Identificación de fuentes bajo perturbaciones en Escenario B |
+| **M5** | **Recuperación ante fallo** | Reintentos / corrida | Promedio de reintentos HTTP en Escenario C |
