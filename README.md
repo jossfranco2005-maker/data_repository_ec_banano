@@ -1,9 +1,18 @@
-# data_repository_ec_banano
+# Agentes de IA para la Automatización de Procesos ETL en Aplicaciones de BI del Sector Bananero Ecuatoriano
 
-Repositorio del **Trabajo de Titulación — Universidad Técnica de Machala**
+*Repositorio del Trabajo de Titulación — Universidad Técnica de Machala*
 
 > *ETL Inteligente con Agentes de IA para el Sector Bananero del Ecuador*  
 > Datos: ESPAC · SIPA · FAOSTAT · AEBE
+
+---
+
+### Autores y Afiliación
+
+- Joselyn K. Franco – Universidad Técnica de Machala, Ecuador
+- Camilly Y. Pacheco – Universidad Técnica de Machala, Ecuador
+- Bertha E. Mazon – Universidad Técnica de Machala, Ecuador
+- Maritza A. Pinta – Universidad Técnica de Machala, Ecuador
 
 ---
 
@@ -13,7 +22,7 @@ Pipeline ETL automatizado que extrae, transforma y carga datos públicos del sec
 
 ---
 
-## 📐 Arquitectura General
+## 🏗️ Arquitectura General
 
 ```
 Fuentes públicas                 Databricks (Unity Catalog)         Destino
@@ -49,7 +58,7 @@ data_repository_ec_banano/
 │
 └── resultados/                   # Outputs del experimento (métricas y figuras en 300 DPI)
     ├── metricas/                 # Tablas de métricas consolidadas (CSV y Excel Tesis 1,080 registros)
-    └── graficos/                 # Gráficos estadísticos y radar  en alta resolución
+    └── graficos/                 # Gráficos estadísticos y radar en alta resolución
 ```
 
 ---
@@ -89,20 +98,20 @@ La métrica $M_2$ evalúa la calidad sobre cada registro procesado considerando 
 | **Consistencia** | El flujo experimental posee un único destino de almacenamiento, por lo que no existe un segundo sistema con el cual comparar los datos. |
 | **Puntualidad** | Todas las arquitecturas procesan los mismos archivos dentro de la misma ventana temporal, por lo que esta dimensión no discrimina entre tratamientos. |
 
-Formalmente, $M_2$ se calcula como la proporción de registros que satisfacen simultáneamente completitud, validez y unicidad respecto al total de filas leídas:
+Formalmente, $M_2$ se calcula como:
 
 $$M_2 = \left( \frac{\text{registros válidos}}{\text{total filas}} \right) \times 100$$
 
 #### 🤖 M3. Llamadas al LLM
-Contabiliza las llamadas al modelo realizadas durante el procesamiento, incluyendo exitosas, fallidas y repetidas. El total se normaliza según el número de archivos procesados y se registra en `m3_llamadas_api`. La última respuesta se conserva en `llm_response` para auditoría:
+Contabiliza las llamadas al modelo realizadas durante el procesamiento, incluyendo exitosas, fallidas y repetidas. El total se normaliza según el número de archivos procesados y se registra en `m3_llamadas_api`:
 
 $$M_3 = \frac{\sum \text{llamadas}_{\text{LLM}}}{n_{\text{archivos procesados}}}$$
 
 #### 🧩 M4. Resiliencia Semántica ante Perturbación
-Cuantifica el porcentaje de fuentes correctamente identificadas bajo las cuatro perturbaciones estructurales del Escenario B (columna renombrada, fila vacía insertada, columna adicional y columna eliminada), como medida de robustez semántica. Se registra en `m4_resiliencia_semantica`.
+Cuantifica el porcentaje de fuentes correctamente identificadas bajo las cuatro perturbaciones estructurales del Escenario B (columna renombrada, fila vacía insertada, columna adicional y columna eliminada). Se registra en `m4_resiliencia_semantica`.
 
 #### 🔄 M5. Eficiencia de Recuperación ante Fallo
-Registra el promedio de reintentos HTTP por corrida necesarios para completar la extracción en el Escenario C (simulación de fallos de red), y se registra en `m5_eficiencia_recuperacion`.
+Registra el promedio de reintentos HTTP por corrida necesarios para completar la extracción en el Escenario C (simulación de fallos de red). Se registra en `m5_eficiencia_recuperacion`.
 
 ---
 
@@ -114,10 +123,18 @@ Registra el promedio de reintentos HTTP por corrida necesarios para completar la
    - `tarea_extraccion` ➔ `1_Extraccion.ipynb`
    - `tarea_transformacion` ➔ `2_Transformacion.ipynb` *(condición: `hay_nuevos == "true"`)*
    - `tarea_carga` ➔ `3_Carga.ipynb` *(condición: `status == "success"`)*
-3. Configurar las credenciales de Google Drive API en la variable global `SERVICE_ACCOUNT_INFO` o `FOLDER_OUTPUT_ID`.
+3. Configurar las credenciales de Google Drive API en `SERVICE_ACCOUNT_INFO` o `FOLDER_OUTPUT_ID`.
 
 ### Experimentos de Comparación
-Cada notebook en `experimentos_comparacion/` es autocontenido. Ejecutar en orden secuencial de bloques (0 ➔ 1 ➔ 2 ➔ ... ➔ N). El Bloque 0 es opcional (reset de prueba).
+Cada notebook en `experimentos_comparacion/` es autocontenido. Ejecutar en orden de bloques (0 ➔ 1 ➔ 2 ➔ ... ➔ N). El Bloque 0 es opcional (reset del entorno).
+
+---
+
+## 🔁 Notas de Reproducibilidad
+
+- Las tres arquitecturas (Agente Custom, LangGraph, LlamaIndex) se evalúan bajo un mismo marco de métricas M1–M5.
+- Todas las fuentes se descargan y verifican por MD5 antes de procesarse, evitando reprocesamiento innecesario.
+- Las tablas finales se materializan en Delta Lake (Unity Catalog) antes de exportarse a Google Drive.
 
 ---
 
@@ -129,3 +146,30 @@ Cada notebook en `experimentos_comparacion/` es autocontenido. Ejecutar en orden
 | **SIPA** | MAG Ecuador | 2015–2025 | xlsx / xls |
 | **FAOSTAT** | FAO | 1990–2026 | json / csv |
 | **AEBE** | AEBE Ecuador | 2010–2025 | pdf / xlsx |
+
+---
+
+## 💻 Requisitos
+
+- Python 3.10+
+- PySpark
+- Delta Lake
+- LangChain / LangGraph / LlamaIndex
+- Acceso a Databricks (Unity Catalog)
+- Credenciales de Google Drive API (`SERVICE_ACCOUNT_INFO`)
+
+---
+
+## ⚠️ Disclaimer
+
+Este repositorio corresponde a un trabajo de titulación con fines académicos. Los datos provienen de fuentes públicas (ESPAC, SIPA, FAOSTAT, AEBE) y se procesan únicamente con fines de investigación.
+
+---
+
+## ✉️ Contacto
+
+Para consultas sobre replicación o uso académico:
+
+**Joselyn K. Franco**  
+jfranco9@utmachala.edu.ec  
+Universidad Técnica de Machala, Ecuador
