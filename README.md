@@ -1,4 +1,4 @@
-# Agentes de IA para la Automatización de Procesos ETL en Aplicaciones de BI del Sector Bananero Ecuatoriano
+# Agentes de IA para Automatización ETL en BI del Sector Bananero Ecuatoriano
 
 *Repositorio del Trabajo de Titulación — Universidad Técnica de Machala*
 
