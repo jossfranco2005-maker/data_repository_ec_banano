@@ -7,7 +7,7 @@ Son la versión limpia, modular y desacoplada del pipeline, seleccionada para pr
 
 ## 🏆 Arquitectura Seleccionada
 
-El pipeline productivo está implementado como **Agente Custom (Híbrido Python-LangChain)**, elegido por ser la arquitectura con mejor estabilidad, menor sobrecosto de orquestación y cobertura total en las 12 fuentes públicas del sector bananero ecuatoriano, manteniendo una variación de tiempo inferior al 1.4% entre condiciones nominal y perturbada.
+El pipeline productivo está implementado como **Agente Custom (Híbrido Python-LangChain)**, elegido por criterios cualitativos: menor mantenimiento de versiones, flexibilidad de la orquestación y consumo competitivo del LLM. Ninguna arquitectura domina todas las dimensiones evaluadas (ver `experimentos_comparacion/README.md`).
 
 ---
 

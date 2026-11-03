@@ -1,70 +1,33 @@
-# Experimentos de Comparación — Arquitecturas de Agente ETL
+# Experimentos de comparación — tres implementaciones de agente ETL
 
-Contiene los notebooks del **estudio comparativo de benchmark** entre tres arquitecturas de orquestación de agentes IA aplicadas al mismo pipeline ETL sobre datos del sector bananero del Ecuador.
+Los tres notebooks de esta carpeta son los **oficiales** que respaldan el manuscrito revisado (INGENIUS #14226). Se guardan **sin salidas**; los resultados están en `../resultados/logs/finales/` (consolidado) y en `../resultados/tablas/`. Las versiones enviadas en agosto/octubre están en `../_historico/notebooks_comparacion_v1_enviado/` y son obsoletas.
 
----
+| Carpeta | Implementación | Estructura |
+|:--|:--|:--|
+| `agente_custom/` | Agente híbrido en Python (LangChain solo para el LLM) | Clase `AgenteETL` con pasos sobre un diccionario de estado compartido |
+| `langgraph/` | LangGraph | `StateGraph` con estado tipado y aristas condicionales |
+| `llamaindex/` | LlamaIndex Workflows | Eventos y pasos asíncronos; funciona como notebook de referencia |
 
-## 🎯 Objetivo del Experimento
+Modelo común: `databricks-llama-4-maverick` (Databricks Foundation Models). Mismo conjunto de 12 archivos por ejecución (anexo A4) y helpers de perturbación con la misma lógica en los tres notebooks (escenarios B y C).
 
-Determinar cuál arquitectura de agente produce el mejor balance entre **eficiencia de tiempo** ($M_1$), **calidad del dato** ($M_2$), **eficiencia LLM** ($M_3$), **resiliencia semántica** ($M_4$) y **estabilidad ante fallos** ($M_5$) en un pipeline ETL heterogéneo (xlsx, csv, pdf, json), bajo 3 escenarios experimentales (A: Nominal, B: Perturbación de Esquema, C: Fallo Controlado de Red) con **10 corridas por escenario (360 ejecuciones por framework, 1,080 registros totales)**.
+## Qué es común y qué difiere
+- **Común:** conjunto de archivos, modelo, escenarios y protocolo de perturbación, bucle de descarga con reintentos (máximo 3 intentos), esquema de logs y métricas.
+- **Difiere:** reglas de identificación de fuente, manejo de errores, estructura de orquestación y detalles de reintento. Ejemplo medido y explicado: Custom nombra el archivo SIPA de uso del suelo con prefijo `ESPAC_` al descargarlo (celda de descarga, `'SIPA': 'SIPA_' if 'USO' not in nombre else 'ESPAC_'`), por lo que `identificar_fuente` lo etiqueta INEC-ESPAC en A, B y C (110/120); LangGraph y LlamaIndex usan siempre `SIPA_` y lo etiquetan SIPA-MAG. No es efecto de la perturbación ni del LLM.
+- Documentación de paridad en los notebooks: Custom (7 cambios de paridad), LangGraph (15 cambios sincronizados con LlamaIndex). LlamaIndex no incluye una tabla equivalente.
+- Por tanto, **no se afirma equivalencia interna**: las conclusiones comparan soluciones completas, no la orquestación aislada.
 
----
+**Dónde está el código de las perturbaciones, la configuración y las métricas:** dentro de los notebooks (no hay scripts independientes); ver [`MAPA_DE_CODIGO.md`](MAPA_DE_CODIGO.md), que indica la celda de cada elemento y las celdas que no forman parte del protocolo.
 
-## 🤖 Las Tres Arquitecturas Comparadas
+## Escenarios
+- **A, nominal:** 12 archivos sin alteración.
+- **B, variaciones:** 11 archivos con sufijo `_VAR` (8 ESPAC, 2 SIPA, 1 FAOSTAT) y el PDF de AEBE renombrado (`AEBE_BANANOTAS_<hash>.pdf` → `BANANOTAS_REPORTE_<hash>.pdf`). La evidencia consolidada confirma los nombres perturbados; las modificaciones internas se describen en el anexo A3 y en los helpers de perturbación de cada notebook.
+- **C, fallos controlados:** en el primer intento de cada descarga se trunca el archivo con probabilidad 0,5 (`random.random() < 0.5`, **sin semilla**); máximo 3 intentos. Una recuperación es satisfactoria si la extracción termina con `archivos_error = 0`.
 
-| Carpeta | Framework | Descripcion & Arquitectura |
-|:---|:---|:---|
-| **`agente_custom/`** | **Agente Custom** (Ganador) | Agente Híbrido escrito en Python puro sin frameworks de orquestación externos. Clase `AgenteETL` con lista de tuplas `(paso, fn_paso, fn_ruta)` sobre un diccionario de estado compartido mutable. |
-| **`langgraph/`** | **LangGraph** | Grafo de nodos con aristas condicionales (`StateGraph`). Estado tipado con `TypedDict`. Flujo estructurado: `lectura ➔ mapeo ➔ transformacion ➔ carga ➔ metricas`. |
-| **`llamaindex/`** | **LlamaIndex Workflows** | Pipeline basado en eventos asíncronos (`Event`/`Step` decoradores con `ctx.send_event()`). Mantiene la misma estructura de métricas que LangGraph. |
+## Uso
+Cada notebook es autocontenido; ejecutar los bloques en orden (0 → N). El Bloque 0 vacía volúmenes y tablas y debe ejecutarse antes de cada corrida. Variable `ESCENARIO` ("A", "B" o "C") en el Bloque 2. Defina `FAOSTAT_USERNAME`/`FAOSTAT_PASSWORD`, catálogo/esquema/volúmenes (las rutas de volúmenes de los notebooks usan, p. ej., `workspace` o `databricksbanano`; ajústelas a su espacio) y, si exporta a Drive, `SERVICE_ACCOUNT_INFO` y `FOLDER_OUTPUT_ID` (en el repo son marcadores `secret_IA`).
 
-Todos los experimentos utilizan el modelo **Llama 4 Maverick** (`databricks-llama-4-maverick`) sobre **Databricks** y procesan exactamente el mismo conjunto de datos pauta (**ESPAC**, **SIPA**, **FAOSTAT**, **AEBE**).
+## Exportación de resultados (opcional)
+Al final de cada notebook hay una sección «Exportación de resultados (opcional, posterior a la ejecución)» con las celdas que exportan las métricas a Excel. **No forman parte del protocolo experimental y no deben ejecutarse entre corridas.** Defina `RUTA_EXPORT` (marcador `/Volumes/<catalogo>/<esquema>/<volumen>/exports/`) antes de ejecutarla; no cambian tablas ni métricas. Nombres de hojas y columnas se mantienen porque `analisis/analisis_ingenius.py` depende de ellos. Detalle del cambio: las celdas se movieron sin modificar su lógica (solo se sustituyeron rutas por `RUTA_EXPORT`); en LlamaIndex una celda que mezclaba el helper de deduplicación con una exportación se dividió en dos. Observación: la celda «EXPORTAR MÉTRICAS ESCENARIO A» de LlamaIndex usa `archivo_salida`, que no se define en el notebook; se conserva tal cual y requiere definirla antes de ejecutarla.
 
----
-
-## 📂 Notebooks por Arquitectura
-
-```
-experimentos_comparacion/
-├── agente_custom/
-│   └── ESC_ETL_AgenteCustom_Banano_Experimento (10).ipynb   # (76 celdas, 0 outputs)
-├── langgraph/
-│   └── ESC_ETL_LangGraph_Banano_Experimento (10).ipynb     # (73 celdas, 0 outputs)
-└── llamaindex/
-    └── ESC_ETL_LlamaIndex_Banano_Experimento (5).ipynb       # (63 celdas, 0 outputs)
-```
-
----
-
-## 📊 Marco Formal de Métricas ($M_1$–$M_5$)
-
-### Tabla 6. Métricas de Evaluación
-| ID | Métrica | Unidad | Forma de Análisis |
-|:---:|:---|:---:|:---|
-| **M1** | **Tiempo de ejecución** | Segundos | Promedio por combinación de arquitectura y escenario |
-| **M2** | **Calidad del dato** | Porcentaje ($\%$) | Promedio por combinación de arquitectura y escenario |
-| **M3** | **Llamadas al LLM** | Llamadas por archivo | Promedio por combinación de arquitectura y escenario |
-| **M4** | **Resiliencia semántica ante perturbación** | Porcentaje ($0$–$100\%$) | Reporte por arquitectura en Escenario B |
-| **M5** | **Eficiencia de recuperación ante fallo** | Número de reintentos por corrida | Promedio por arquitectura en Escenario C |
-
----
-
-### 🔍 Fórmulas y Dimensiones de Calidad
-
-#### M2. Calidad del Dato
-Evalúa completitud, validez y unicidad sobre cada registro procesado:
-
-$$M_2 = \left( \frac{\text{registros válidos}}{\text{total filas}} \right) \times 100$$
-
-*Dimensiones excluidas justificadamente:* Exactitud (requiere fuente independiente), Consistencia (destino único de almacenamiento) y Puntualidad (misma ventana temporal).
-
-#### M3. Llamadas al LLM Normalizadas
-$$M_3 = \frac{\sum \text{llamadas}_{\text{LLM}}}{n_{\text{archivos procesados}}}$$
-
----
-
-## 📈 Hallazgos y Análisis Estadístico ()
-
-- **Test Kruskal-Wallis:** Demostró diferencias estadísticamente significativas ($\alpha = 0.05$) en **$M_2$ Calidad del Dato** ($p = 0.003$), **$M_3$ Llamadas LLM** ($p < 0.001$) y **$M_5$ Reintentos** ($p < 0.001$).
-- **Test Post-Hoc Dunn (Bonferroni):** Confirmó que el **Agente Custom** y **LlamaIndex** logran una eficiencia LLM significativamente superior ($M_3 = 0.94$ llamadas/archivo) respecto a LangGraph ($M_3 = 1.00$, $p = 0.0002$), al utilizar mapeo directo por regla para fuentes estructuradas conocidas.
-- **Resiliencia Semántica ($M_4$):** LlamaIndex logró $100\%$ de resiliencia semántica al resolver el renombrado de PDFs AEBE, seguido por Agente Custom ($91.7\%$).
+## Resultados
+No se duplican aquí; véase el [README principal](../README.md), `../resultados/tablas/validacion_reproducibilidad.md` y `../resultados/anexos/Anexos_INGENIUS.xlsx`.

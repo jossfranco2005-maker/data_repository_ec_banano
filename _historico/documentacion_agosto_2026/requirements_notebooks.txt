@@ -1,0 +1,10 @@
+# Versiones reportadas en el manuscrito (Sección 2.2.1, pip freeze del experimento).
+# Se instalan dentro de los notebooks con %pip (ver las variantes *_reproducible.ipynb).
+langchain==0.3.30
+langchain-core==0.3.86
+langchain-databricks==0.1.2
+langgraph==1.0.1                 # solo LangGraph
+llama-index==0.14.23             # solo LlamaIndex
+llama-index-workflows==2.22.2    # solo LlamaIndex
+# Sin versión registrada (se instalaron sin fijar): google-api-python-client, google-auth-httplib2,
+# google-auth-oauthlib, openpyxl, xlrd, beautifulsoup4, numpy, faostat, scikit-learn, pdfplumber

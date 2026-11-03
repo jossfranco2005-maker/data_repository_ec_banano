@@ -1,182 +1,77 @@
-# Agentes de IA para Automatización ETL en BI del Sector Bananero Ecuatoriano
+# Agentes de IA para automatización ETL en BI del sector bananero ecuatoriano
 
-*Repositorio del Trabajo de Titulación — Universidad Técnica de Machala*
+*Repositorio de investigación — Universidad Técnica de Machala. Material de reproducibilidad del manuscrito INGENIUS #14226 (versión revisada, noviembre de 2026).*
 
-> *ETL Inteligente con Agentes de IA para el Sector Bananero del Ecuador*  
-> Datos: ESPAC · SIPA · FAOSTAT · AEBE
+Datos: ESPAC (INEC) · SIPA (MAG) · FAOSTAT (FAO) · AEBE
 
----
+## Autoras
+Joselyn K. Franco · Camilly Y. Pacheco · Bertha E. Mazon · Maritza A. Pinta — Universidad Técnica de Machala, Ecuador.
 
-### Autores y Afiliación
+## Qué contiene
+Un pipeline ETL con agentes de IA (modelo `databricks-llama-4-maverick`) sobre Databricks, y un experimento que compara **tres implementaciones completas**: Agente híbrido Python (Custom), LangGraph y LlamaIndex Workflows. Las tres comparten helpers de perturbación y de métricas, pero **difieren** en identificación de fuentes, manejo de errores y reintentos (ver `experimentos_comparacion/README.md`). Las conclusiones se limitan a esas soluciones completas, no a la orquestación de forma aislada.
 
-- Joselyn K. Franco – Universidad Técnica de Machala, Ecuador
-- Camilly Y. Pacheco – Universidad Técnica de Machala, Ecuador
-- Bertha E. Mazon – Universidad Técnica de Machala, Ecuador
-- Maritza A. Pinta – Universidad Técnica de Machala, Ecuador
-
----
-
-## 🌿 ¿Qué es este proyecto?
-
-Pipeline ETL automatizado que extrae, transforma y carga datos públicos del sector bananero ecuatoriano usando **agentes de IA** orquestados con **Llama 4 Maverick** (`databricks-llama-4-maverick`) sobre **Databricks**. El experimento compara tres arquitecturas de orquestación (**Agente Custom (Híbrido Python-LangChain)**, **LangGraph** y **LlamaIndex Workflows**) bajo un marco de métricas $M_1$–$M_5$ formalizado y homogéneo.
-
----
-
-## 🏗️ Arquitectura General
-
+## Estructura
 ```
-Fuentes públicas                 Databricks (Unity Catalog)         Destino
-───────────────                 ──────────────────────────          ───────
-ESPAC (xlsx/pdf)  ──┐           ┌──────────────────────────┐
-SIPA  (xlsx)      ──┼── Agente  │  bd_banano_ec            │       Google Drive
-FAOSTAT (csv)     ──┼──  de IA  │  ├─ dim_regiones         │  ──►  (Archivos .xlsx
-AEBE (pdf/xlsx)   ──┘  └───────►│  ├─ dim_provincias       │        Deduplicados)
-                                │  ├─ espac_banano_*       │
-                                │  ├─ sipa_temperatura_*   │
-                                │  └─ faostat_produccion_* │
-                                └──────────────────────────┘
+pipeline_produccion/            Notebooks de producción (1_Extraccion, 2_Transformacion, 3_Carga). No son del experimento.
+experimentos_comparacion/       Los tres notebooks OFICIALES del experimento (sin salidas guardadas) + MAPA_DE_CODIGO.md
+  agente_custom/ langgraph/ llamaindex/
+analisis/
+  analisis_ingenius.py          Reconstruye M1-M5, valida integridad y contrasta con las cifras del manuscrito
+  generar_figuras.py            Genera las 5 figuras (300 DPI) desde el mismo consolidado
+resultados/
+  logs/finales/                 Consolidado oficial: experimentos_3frameworks_todas_corridas_20261103_B_actualizado.xlsx
+  tablas/                       tablas_ingenius.xlsx, datos_ejecucion.csv (90 filas), validacion_reproducibilidad.md
+  graficos/                     fig1 a fig5 (generadas por el script)
+  anexos/Anexos_INGENIUS.xlsx   Anexos A1-A8 (variables, equivalencias, perturbaciones, fuentes, lotes, cronología, criterios, M2 por fuente)
+_historico/                     Material de la versión enviada en agosto/octubre. OBSOLETO; ver _historico/README.md
+REPRODUCIBILIDAD.md  VERSIONES.md  SHA256SUMS.txt
 ```
 
-**Stack tecnológico:** Python · PySpark · Delta Lake · LangChain · LangGraph · LlamaIndex Workflows · Llama 4 Maverick · Google Drive API
+## Diseño experimental vigente
+- 3 implementaciones × 3 escenarios (A nominal, B variaciones de esquema/nombre, C fallos de descarga) × 10 ejecuciones = **90 ejecuciones**; 12 archivos por ejecución = **1.080 instancias de archivo** (las instancias de una misma ejecución no son observaciones independientes; la unidad de análisis es la ejecución, n = 10 por combinación).
+- A y C: lote `corrida_oficial_2nov` (2-nov-2026). B: lote `corrida_oficial_3nov` (3-nov-2026). El B del 2-nov se **descartó** porque no aplicó las perturbaciones (evidencia en el anexo A5 y en el consolidado, hoja `P9_Registro_Corridas`).
+- Orden de ejecución **no aleatorizado**: cada combinación se ejecutó en un bloque de 10 corridas. En el escenario B, las ventanas de AgenteCustom y LlamaIndex se solapan en el tiempo (ver `REPRODUCIBILIDAD.md`).
 
----
+## Métricas (definiciones operativas; detalle en anexo A1)
+| ID | Métrica | Cálculo |
+|:--|:--|:--|
+| M1 | Tiempo | Media de `m1_tiempo_segundos` por archivo dentro de cada ejecución; resumen = media ± DE entre ejecuciones |
+| M2 | Integridad/validez por reglas | Por archivo: `filas_salida / filas_entrada × 100`; resumen = media simple de los porcentajes por archivo. La ponderada por filas (2.374.200 / 2.721.420 = 87,24 %) se reporta aparte. **No mide exactitud semántica** |
+| M3 | Llamadas al LLM | Llamadas por archivo (campo interno `m5_llamadas_api`) |
+| M4 | Identificación de fuente | Fuente asignada vs. fuente esperada por nombre de archivo; se reporta por fuente (4) y por archivo (120 por framework y escenario) |
+| M5 | Reintentos de descarga | Suma de `reintentos_realizados` de las 4 fuentes por ejecución. Mide el costo de recuperar, no la eficiencia |
 
-## 📂 Estructura del Repositorio
+## Resultados oficiales (reconstruidos desde el consolidado)
+| | A | B | C |
+|:--|:--:|:--:|:--:|
+| M1 Custom (s/archivo) | 14,57 ± 1,25 | 14,12 ± 0,61 | 14,59 ± 1,25 |
+| M1 LangGraph | 14,73 ± 0,79 | 12,27 ± 0,64 | 15,36 ± 1,73 |
+| M1 LlamaIndex | 15,28 ± 0,60 | 14,99 ± 0,79 | 15,24 ± 0,36 |
+| Kruskal-Wallis (p) | 0,01298 | 0,0000357 | 0,01183 |
 
+- Mann-Whitney con corrección de Holm (3 pares por escenario): en A y C solo Custom–LlamaIndex es significativo; en B lo son los tres pares. No hay ganador global; LangGraph es el más rápido solo en B. Pruebas **exploratorias** (orden no aleatorizado, n = 10).
+- M2: 98,635 % (media simple) en las tres implementaciones y escenarios, sin variación entre ejecuciones.
+- M3: 0,9167 llamadas/archivo en A y C; 1,0000 en B, igual en las tres.
+- M4 (B): Custom 3/4 fuentes (75 %) y 110/120 archivos (91,7 %); LangGraph y LlamaIndex 100 %. El error de Custom tiene causa conocida: en su paso de descarga antepone `ESPAC_` al archivo SIPA de uso del suelo (`ESPAC_SIPA_USO_SUELO*.xlsx`) y `identificar_fuente` (misma lógica en los tres notebooks; solo difieren comentarios) evalúa antes `startswith("ESPAC_")`, por lo que lo etiqueta INEC-ESPAC en vez de SIPA-MAG. Es determinista, aparece también en A y C (110/120) y no depende de la perturbación ni del LLM; el procesamiento y M2 no se afectan. El PDF de AEBE renombrado fue identificado por las tres.
+- M5 (C): 5,3 ± 1,34 (Custom), 5,7 ± 2,36 (LangGraph), 6,6 ± 1,43 (LlamaIndex); Kruskal-Wallis p = 0,1866; recuperación final 100 % en las tres. No hay eventos de intento por archivo.
+- 0 registros con `status = ERROR` en las 1.080 instancias; 80 `WARNING` (LangGraph: 20 en cada escenario A, B y C = 60; LlamaIndex: 20, solo en B) son advertencias de calidad, no fallos. AgenteCustom usa `PROCESADO`.
+
+## Cómo reconstruir tablas y figuras
+```bash
+pip install -r requirements.txt
+python analisis/analisis_ingenius.py --estricto     # 35 verificaciones de integridad + 25 contrastes con el manuscrito
+python analisis/generar_figuras.py
 ```
-data_repository_ec_banano/
-│
-├── pipeline_produccion/          # Notebooks de producción (DAG de Databricks Job)
-│   ├── 1_Extraccion.ipynb        # Descarga fuentes públicas, control MD5 y control_descargas_fuentes
-│   ├── 2_Transformacion.ipynb    # Limpieza, KNN inteligente, normalización y carga a Delta Lake Gold
-│   └── 3_Carga.ipynb             # Exportación deduplicada a Google Drive API (.xlsx)
-│
-├── experimentos_comparacion/     # Material de investigación y benchmark (3 arquitecturas)
-│   ├── agente_custom/            # Agente Híbrido Python (Ganador del benchmark)
-│   ├── langgraph/                # Orquestación con LangGraph + Llama 4 Maverick
-│   └── llamaindex/               # Orquestación con LlamaIndex Workflows
-│
-└── resultados/                   # Outputs del experimento (métricas y figuras en 300 DPI)
-    ├── metricas/                 # Tablas de métricas consolidadas (CSV y Excel Tesis 1,080 registros)
-    └── graficos/                 # Gráficos estadísticos y radar en alta resolución
-```
+Esto **reconstruye estadísticas desde los registros**; no ejecuta los notebooks ni consulta Databricks. La reproducción experimental completa requiere Databricks y está descrita (con sus límites) en [`REPRODUCIBILIDAD.md`](REPRODUCIBILIDAD.md).
 
----
+## Datos y licencias
+- FAOSTAT: CC BY 4.0 (atribución a la FAO). INEC-ESPAC: publica bajo Creative Commons. SIPA-MAG y AEBE: sin licencia de reutilización específica declarada; AEBE indica que el usuario es responsable de la utilización y verificación de la información.
+- Todas las fuentes son públicas/institucionales; no se procesan datos personales. Los archivos de entrada no se redistribuyen aquí (el anexo A4 lista procedencia, formato, tamaño y registros).
+- No se incluyen credenciales. Los notebooks contienen valores de marcador (`secret_IA`, `usuario@example.com`) que debe sustituir por los suyos.
+- Revisión ética: este repositorio no declara ninguna aprobación. La declaración definitiva es la del manuscrito (pendiente de confirmar por las autoras; no se afirma una aprobación que no se haya realizado).
 
-## 📊 Marco de Evaluación y Métricas ($M_1$–$M_5$)
+## Licencia
+MIT. Véase [LICENSE](LICENSE).
 
-### Tabla 6. Métricas de Evaluación
-| ID | Métrica | Unidad | Forma de Análisis |
-|:---:|:---|:---:|:---|
-| **M1** | **Tiempo de ejecución** | Segundos | Promedio por combinación de arquitectura y escenario |
-| **M2** | **Calidad del dato** | Porcentaje | Promedio por combinación de arquitectura y escenario |
-| **M3** | **Llamadas al LLM** | Llamadas por archivo | Promedio por combinación de arquitectura y escenario |
-| **M4** | **Resiliencia semántica ante perturbación** | Porcentaje de fuentes identificadas correctamente (0–100%) | Reporte por arquitectura en Escenario B |
-| **M5** | **Eficiencia de recuperación ante fallo** | Número de reintentos HTTP por corrida | Promedio por arquitectura en Escenario C |
-
----
-
-### 🔍 Definición Formal de las Métricas
-
-#### ⏱️ M1. Tiempo de Ejecución
-Mide el tiempo transcurrido desde el inicio del procesamiento hasta la persistencia exitosa en Delta Lake, expresado en segundos por archivo, y se calcula por combinación de arquitectura y escenario.
-
-#### 🎯 M2. Calidad del Dato
-La métrica $M_2$ evalúa la calidad sobre cada registro procesado considerando tres dimensiones fundamentales:
-
-##### Tabla 7. Dimensiones consideradas para $M_2$
-| Dimensión | Criterio Aplicado |
-|:---|:---|
-| **Completitud** | Los campos críticos (provincia, producto, período y valor numérico) deben estar presentes y sin valores nulos. |
-| **Validez** | Fechas válidas dentro del período reportado, valores numéricos dentro de rangos aceptables y provincias existentes en el catálogo maestro. |
-| **Unicidad** | La combinación fuente, período, provincia y producto debe ser única en el archivo; los registros duplicados se excluyen del numerador. |
-
-##### Tabla 8. Dimensiones de calidad excluidas de $M_2$
-| Dimensión | Motivo de Exclusión |
-|:---|:---|
-| **Exactitud** | Requeriría contrastar cada registro con una fuente de verdad independiente. |
-| **Consistencia** | El flujo experimental posee un único destino de almacenamiento, por lo que no existe un segundo sistema con el cual comparar los datos. |
-| **Puntualidad** | Todas las arquitecturas procesan los mismos archivos dentro de la misma ventana temporal, por lo que esta dimensión no discrimina entre tratamientos. |
-
-Formalmente, $M_2$ se calcula como:
-
-$$M_2 = \left( \frac{\text{registros válidos}}{\text{total filas}} \right) \times 100$$
-
-#### 🤖 M3. Llamadas al LLM
-Contabiliza las llamadas al modelo realizadas durante el procesamiento, incluyendo exitosas, fallidas y repetidas. El total se normaliza según el número de archivos procesados y se registra en `m3_llamadas_api`:
-
-$$M_3 = \frac{\sum \text{llamadas}_{\text{LLM}}}{n_{\text{archivos procesados}}}$$
-
-#### 🧩 M4. Resiliencia Semántica ante Perturbación
-Cuantifica el porcentaje de fuentes correctamente identificadas bajo las cuatro perturbaciones estructurales del Escenario B (columna renombrada, fila vacía insertada, columna adicional y columna eliminada). Se registra en `m4_resiliencia_semantica`.
-
-#### 🔄 M5. Eficiencia de Recuperación ante Fallo
-Registra el promedio de reintentos HTTP por corrida necesarios para completar la extracción en el Escenario C (simulación de fallos de red). Se registra en `m5_eficiencia_recuperacion`.
-
----
-
-## 🚀 Cómo Ejecutar
-
-### Pipeline de Producción (Databricks Job)
-1. Importar los 3 notebooks de `pipeline_produccion/` a tu workspace de Databricks.
-2. Crear un Job con 3 tareas encadenadas:
-   - `tarea_extraccion` ➔ `1_Extraccion.ipynb`
-   - `tarea_transformacion` ➔ `2_Transformacion.ipynb` *(condición: `hay_nuevos == "true"`)*
-   - `tarea_carga` ➔ `3_Carga.ipynb` *(condición: `status == "success"`)*
-3. Configurar las credenciales de Google Drive API en `SERVICE_ACCOUNT_INFO` o `FOLDER_OUTPUT_ID`.
-
-### Experimentos de Comparación
-Cada notebook en `experimentos_comparacion/` es autocontenido. Ejecutar en orden de bloques (0 ➔ 1 ➔ 2 ➔ ... ➔ N). El Bloque 0 es opcional (reset del entorno).
-
----
-
-## 🔁 Notas de Reproducibilidad
-
-- Las tres arquitecturas (Agente Custom, LangGraph, LlamaIndex) se evalúan bajo un mismo marco de métricas M1–M5.
-- Todas las fuentes se descargan y verifican por MD5 antes de procesarse, evitando reprocesamiento innecesario.
-- Las tablas finales se materializan en Delta Lake (Unity Catalog) antes de exportarse a Google Drive.
-
----
-
-## 🌾 Fuentes de Datos
-
-| Fuente | Organismo | Período | Formato |
-|:---|:---|:---:|:---:|
-| **ESPAC** | INEC Ecuador | 2010–2025 | xlsx / csv |
-| **SIPA** | MAG Ecuador | 2015–2025 | xlsx / xls |
-| **FAOSTAT** | FAO | 1990–2026 | json / csv |
-| **AEBE** | AEBE Ecuador | 2010–2025 | pdf / xlsx |
-
----
-
-## 💻 Requisitos
-
-- Python 3.10+
-- PySpark
-- Delta Lake
-- LangChain / LangGraph / LlamaIndex
-- Acceso a Databricks (Unity Catalog)
-- Credenciales de Google Drive API (`SERVICE_ACCOUNT_INFO`)
-
----
-
-## ⚠️ Disclaimer
-
-Este repositorio corresponde a un trabajo de titulación con fines académicos. Los datos provienen de fuentes públicas (ESPAC, SIPA, FAOSTAT, AEBE) y se procesan únicamente con fines de investigación.
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
-
----
-
-## ✉️ Contacto
-
-Para consultas sobre replicación o uso académico:
-
-**Joselyn K. Franco**  
-jfranco9@utmachala.edu.ec  
-Universidad Técnica de Machala, Ecuador
-
+## Contacto
+Joselyn K. Franco — jfranco9@utmachala.edu.ec — Universidad Técnica de Machala, Ecuador.
