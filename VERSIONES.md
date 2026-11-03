@@ -34,7 +34,7 @@ Los notebooks de `experimentos_comparacion/` provienen de las versiones sincroni
 |:--|:--|:--|:--|
 | Enviada a INGENIUS | `v1-enviado-ingenius` | `994eda6` | Primera versión enviada (obsoleta; ver `_historico/`) |
 | Revisión INGENIUS (citada en el manuscrito) | `v2-revision-ingenius` | `c12ffac` | Notebooks, scripts de análisis, consolidado y anexos de la revisión |
-| Actualización de documentación (este archivo) | — | <mark>HASH_NUEVO_COMMIT</mark> | Solo corrige este documento; no modifica notebooks, datos ni resultados |
+| Actualización de documentación (este archivo) | — | d3f1875 | Solo corrige este documento; no modifica notebooks, datos ni resultados |
 
 La versión de los notebooks queda fijada por su suma SHA-256 en `SHA256SUMS.txt` y por la etiqueta `v2-revision-ingenius`. Mapa de las celdas relevantes (perturbaciones, identificación de fuente, métricas) en `experimentos_comparacion/MAPA_DE_CODIGO.md`.
 
