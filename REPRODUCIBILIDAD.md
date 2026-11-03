@@ -20,6 +20,7 @@
 - Las fuentes SIPA y AEBE se descargan de sitios vivos y cambian; los insumos no están archivados aquí (anexo A4: nombres, formatos, filas).
 - FAOSTAT consulta hasta el año de la ejecución.
 - **Truncamiento del escenario C sin semilla** (`random.random() < 0.5`): la proporción de fallos es reproducible en distribución, no archivo por archivo; no se sabe qué descargas se truncaron.
+- **Notebooks de los escenarios A y C no conservados:** los notebooks publicados son los sincronizados el 2-nov-2026 (23:36) y se usaron en B; los usados en A y C (ejecutados antes) no se conservaron, por lo que no es posible compararlos línea a línea con los publicados.
 - Compute/cluster por corrida no registrado. Las versiones por framework (incluida LlamaIndex 0.14.25) provienen de la instalación de cada notebook, no de un `pip freeze` por ejecución (ver `VERSIONES.md`).
 - Sin eventos de intento por archivo: no hay tasa de reintentos por archivo ni tiempo de recuperación.
 - Tiempos medidos en Databricks Free, con orden no aleatorizado y efecto de orden en A (LangGraph ρ = −0,94, p_Holm = 0,0005; LlamaIndex ρ = −0,84, p_Holm = 0,018).

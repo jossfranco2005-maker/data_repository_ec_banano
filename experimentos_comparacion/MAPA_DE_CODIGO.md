@@ -2,7 +2,7 @@
 
 Los generadores de perturbaciones, la configuración y el cálculo de las métricas **están dentro de los notebooks** (no hay scripts `.py` independientes para ellos). Este mapa indica en qué celda está cada elemento para que pueda localizarse y auditarse. Los índices son los de `nbformat` (empiezan en 0; en Databricks/Jupyter, la celda número `i+1` contando todas las celdas).
 
-Verificado sobre los notebooks publicados en esta carpeta (sin salidas):
+Verificado sobre los notebooks publicados en esta carpeta (sin salidas). Estos son los sincronizados el 2-nov-2026 (23:36) y se usaron en el escenario B; los notebooks con que se ejecutaron A y C (antes de esa sincronización) no se conservaron, así que la equivalencia solo se verificó sobre los publicados:
 
 - `aplicar_variacion_esquema` (perturbaciones del escenario B): **código idéntico** en los tres notebooks (misma lógica, comparada sin comentarios).
 - `aplicar_fallo_controlado` (fallo del escenario C): **misma lógica** en los tres (primer intento, `random.random() < 0.5`, trunca a la mitad de los bytes; sin semilla). AgenteCustom difiere solo en el texto del mensaje impreso y en el estilo de una línea.

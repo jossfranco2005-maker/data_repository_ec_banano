@@ -8,7 +8,7 @@ Datos: ESPAC (INEC) · SIPA (MAG) · FAOSTAT (FAO) · AEBE
 Joselyn K. Franco · Camilly Y. Pacheco · Bertha E. Mazon · Maritza A. Pinta — Universidad Técnica de Machala, Ecuador.
 
 ## Qué contiene
-Un pipeline ETL con agentes de IA (modelo `databricks-llama-4-maverick`) sobre Databricks, y un experimento que compara **tres implementaciones completas**: Agente híbrido Python (Custom), LangGraph y LlamaIndex Workflows. Las tres comparten helpers de perturbación y de métricas, pero **difieren** en identificación de fuentes, manejo de errores y reintentos (ver `experimentos_comparacion/README.md`). Las conclusiones se limitan a esas soluciones completas, no a la orquestación de forma aislada.
+Un pipeline ETL con agentes de IA (modelo `databricks-llama-4-maverick`) sobre Databricks, y un experimento que compara **tres implementaciones completas**: Agente híbrido Python (Custom), LangGraph y LlamaIndex Workflows. Las tres comparten helpers de perturbación y de métricas, y la regla `identificar_fuente` y el bucle de descarga (máximo 3 intentos) son iguales; **difieren** en la coordinación del flujo, el manejo de errores en la transformación (LlamaIndex se detiene con `StopEvent`, sin recuperación automática) y el prefijo de descarga de AgenteCustom (ver `experimentos_comparacion/README.md` y `MAPA_DE_CODIGO.md`). Las conclusiones se limitan a esas soluciones completas, no a la orquestación de forma aislada.
 
 ## Estructura
 ```
@@ -30,6 +30,7 @@ REPRODUCIBILIDAD.md  VERSIONES.md  SHA256SUMS.txt
 ## Diseño experimental vigente
 - 3 implementaciones × 3 escenarios (A nominal, B variaciones de esquema/nombre, C fallos de descarga) × 10 ejecuciones = **90 ejecuciones**; 12 archivos por ejecución = **1.080 instancias de archivo** (las instancias de una misma ejecución no son observaciones independientes; la unidad de análisis es la ejecución, n = 10 por combinación).
 - A y C: lote `corrida_oficial_2nov` (2-nov-2026). B: lote `corrida_oficial_3nov` (3-nov-2026). El B del 2-nov se **descartó** porque no aplicó las perturbaciones (evidencia en el anexo A5 y en el consolidado, hoja `P9_Registro_Corridas`).
+- Los notebooks publicados son los sincronizados el 2-nov-2026 (23:36) y se usaron en B. **Los notebooks con que se ejecutaron A y C no se conservaron**, por lo que no es posible compararlos línea a línea con los publicados; la equivalencia solo se verificó sobre estos últimos.
 - Orden de ejecución **no aleatorizado**: cada combinación se ejecutó en un bloque de 10 corridas. En el escenario B, las ventanas de AgenteCustom y LlamaIndex se solapan en el tiempo (ver `REPRODUCIBILIDAD.md`).
 
 ## Métricas (definiciones operativas; detalle en anexo A1)
@@ -39,7 +40,7 @@ REPRODUCIBILIDAD.md  VERSIONES.md  SHA256SUMS.txt
 | M2 | Integridad/validez por reglas | Por archivo: `filas_salida / filas_entrada × 100`; resumen = media simple de los porcentajes por archivo. La ponderada por filas (2.374.200 / 2.721.420 = 87,24 %) se reporta aparte. **No mide exactitud semántica** |
 | M3 | Llamadas al LLM | Llamadas por archivo (campo interno `m5_llamadas_api`) |
 | M4 | Identificación de fuente | Fuente asignada vs. fuente esperada por nombre de archivo; se reporta por fuente (4) y por archivo (120 por framework y escenario) |
-| M5 | Reintentos de descarga | Suma de `reintentos_realizados` de las 4 fuentes por ejecución. Mide el costo de recuperar, no la eficiencia |
+| M5 | Reintentos de recuperación | Suma de `reintentos_realizados` de las 4 fuentes por ejecución. Mide el costo de recuperar, no la eficiencia |
 
 ## Resultados oficiales (reconstruidos desde el consolidado)
 | | A | B | C |
@@ -65,10 +66,10 @@ python analisis/generar_figuras.py
 Esto **reconstruye estadísticas desde los registros**; no ejecuta los notebooks ni consulta Databricks. La reproducción experimental completa requiere Databricks y está descrita (con sus límites) en [`REPRODUCIBILIDAD.md`](REPRODUCIBILIDAD.md).
 
 ## Datos y licencias
-- FAOSTAT: CC BY 4.0 (atribución a la FAO). INEC-ESPAC: publica bajo Creative Commons. SIPA-MAG y AEBE: sin licencia de reutilización específica declarada; AEBE indica que el usuario es responsable de la utilización y verificación de la información.
-- Todas las fuentes son públicas/institucionales; no se procesan datos personales. Los archivos de entrada no se redistribuyen aquí (el anexo A4 lista procedencia, formato, tamaño y registros).
+- Condiciones consultadas en los portales oficiales el 3-nov-2026; enlaces en el anexo A4 (hoja `A4_Fuentes`). FAOSTAT: CC BY 4.0 (atribución a la FAO). INEC-ESPAC: Creative Commons Atribución 4.0 Internacional (CC BY 4.0), según el pie de página del portal. SIPA-MAG y AEBE: sin licencia de reutilización específica declarada; AEBE indica que el usuario es responsable de la utilización y verificación de la normativa publicada. Esto no es una opinión jurídica.
+- Todas las fuentes son públicas/institucionales; no se procesan datos personales. Para SIPA-MAG y AEBE no se afirma permiso de redistribución. Los archivos de entrada no se redistribuyen aquí (el anexo A4 lista procedencia, formato, tamaño y registros).
 - No se incluyen credenciales. Los notebooks contienen valores de marcador (`secret_IA`, `usuario@example.com`) que debe sustituir por los suyos.
-- Revisión ética: este repositorio no declara ninguna aprobación. La declaración definitiva es la del manuscrito (pendiente de confirmar por las autoras; no se afirma una aprobación que no se haya realizado).
+- Revisión ética: no se consideró ni se solicitó revisión ética institucional; el estudio usa fuentes públicas citadas y no involucra personas ni datos personales. Este repositorio no declara ninguna aprobación ni exención.
 
 ## Licencia
 MIT. Véase [LICENSE](LICENSE).
