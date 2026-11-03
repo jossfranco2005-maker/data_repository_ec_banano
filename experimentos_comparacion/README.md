@@ -12,8 +12,7 @@ Modelo común: `databricks-llama-4-maverick` (Databricks Foundation Models). Mis
 
 ## Qué es común y qué difiere
 - **Común:** conjunto de archivos, modelo, escenarios y protocolo de perturbación, bucle de descarga con reintentos (máximo 3 intentos), esquema de logs y métricas.
-- **Difiere:** reglas de identificación de fuente, manejo de errores, estructura de orquestación y detalles de reintento. Ejemplo medido y explicado: Custom nombra el archivo SIPA de uso del suelo con prefijo `ESPAC_` al descargarlo (celda de descarga, `'SIPA': 'SIPA_' if 'USO' not in nombre else 'ESPAC_'`), por lo que `identificar_fuente` lo etiqueta INEC-ESPAC en A, B y C (110/120); LangGraph y LlamaIndex usan siempre `SIPA_` y lo etiquetan SIPA-MAG. No es efecto de la perturbación ni del LLM.
-- Documentación de paridad en los notebooks: Custom (7 cambios de paridad), LangGraph (15 cambios sincronizados con LlamaIndex). LlamaIndex no incluye una tabla equivalente.
+- **Difiere:** el paso de descarga (el prefijo que Custom añade al nombre del archivo SIPA de uso del suelo), manejo de errores, estructura de orquestación y detalles de reintento. Ejemplo medido y explicado: Custom nombra el archivo SIPA de uso del suelo con prefijo `ESPAC_` al descargarlo (celda de descarga, `'SIPA': 'SIPA_' if 'USO' not in nombre else 'ESPAC_'`), por lo que `identificar_fuente` lo etiqueta INEC-ESPAC en A, B y C (110/120); LangGraph y LlamaIndex usan siempre `SIPA_` y lo etiquetan SIPA-MAG. No es efecto de la perturbación ni del LLM.
 - Por tanto, **no se afirma equivalencia interna**: las conclusiones comparan soluciones completas, no la orquestación aislada.
 
 **Dónde está el código de las perturbaciones, la configuración y las métricas:** dentro de los notebooks (no hay scripts independientes); ver [`MAPA_DE_CODIGO.md`](MAPA_DE_CODIGO.md), que indica la celda de cada elemento y las celdas que no forman parte del protocolo.
