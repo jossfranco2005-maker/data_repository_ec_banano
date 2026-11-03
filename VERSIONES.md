@@ -27,9 +27,16 @@ Fuentes: (1) hoja `P10_Entorno_Corridas` del consolidado: entorno común y `pip 
 Instalaciones por sesión: AgenteCustom 2026-11-02 23:38; LlamaIndex 2026-11-02 23:44; LangGraph 2026-11-03 00:18.
 
 ## Código
-Los notebooks de `experimentos_comparacion/` provienen de las versiones sincronizadas el 2-nov (23:36–23:37) y usadas en la re-ejecución del escenario B el 3-nov. Se publican sin salidas y con datos personales normalizados; fuera de eso, sin cambios. Para fijar la versión exacta del código, haga commit y cree una etiqueta (sugerida: `v2-revision-ingenius`; la enviada: `v1-enviado-ingenius`).
+Los notebooks de `experimentos_comparacion/` provienen de las versiones sincronizadas el 2-nov (23:36–23:37) y usadas en la re-ejecución del escenario B el 3-nov. Se publican sin salidas y con datos personales normalizados; fuera de eso, sin cambios. Los notebooks con que se ejecutaron los escenarios A y C (antes de esa sincronización) no se conservaron.
 
-Identificación del código: no hay commit ni etiqueta todavía. La versión de los notebooks queda fijada por su suma SHA-256 en `SHA256SUMS.txt` y, al publicar, por el commit y la etiqueta `v2-revision-ingenius` (la versión enviada, recuperable del commit `994eda6`, `v1-enviado-ingenius`). Mapa de las celdas relevantes (perturbaciones, identificación de fuente, métricas) en `experimentos_comparacion/MAPA_DE_CODIGO.md`.
+### Identificación de la versión del código
+| Versión | Etiqueta | Commit | Contenido |
+|:--|:--|:--|:--|
+| Enviada a INGENIUS | `v1-enviado-ingenius` | `994eda6` | Primera versión enviada (obsoleta; ver `_historico/`) |
+| Revisión INGENIUS (citada en el manuscrito) | `v2-revision-ingenius` | `c12ffac` | Notebooks, scripts de análisis, consolidado y anexos de la revisión |
+| Actualización de documentación (este archivo) | — | <mark>HASH_NUEVO_COMMIT</mark> | Solo corrige este documento; no modifica notebooks, datos ni resultados |
+
+La versión de los notebooks queda fijada por su suma SHA-256 en `SHA256SUMS.txt` y por la etiqueta `v2-revision-ingenius`. Mapa de las celdas relevantes (perturbaciones, identificación de fuente, métricas) en `experimentos_comparacion/MAPA_DE_CODIGO.md`.
 
 ## Cronología de lotes
 | Lote | Fecha | Estado |
